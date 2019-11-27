@@ -5,7 +5,11 @@ import os
 import string
 from nltk.corpus import words
 from googletrans import Translator
-
+translate_urls = ["translate.google.co.kr",
+                       "translate.google.at", "translate.google.de",
+                       "translate.google.ru", "translate.google.ch",
+                       "translate.google.fr", "translate.google.es"]
+tr = Translator(service_urls=translate_urls)
 
 def cleanText(line):
 	result = " ".join(filter(lambda x:x[0]!='#', line.split()))
@@ -19,38 +23,44 @@ def cleanText(line):
 	return result
 	# ^a-zA-Z0-0.,!?
 
+spanish_tweets = open("spanish_tweets_dev.txt","w+")
 output_file= open("dev_emoji.txt","w+")
 
 
 translated = []
-path = '/home/neeha/UT/Sem3/NLP/FP/NLP-Code-Switching/emoji_data/'
+path = '/work/05942/neeha/maverick2/NLP/NLP-Code-Switching/emoji_data/'
 # path = '/home/neeha/UT/Sem3/NLP/FP/USER_TWEETS_SPANISH_ENGLISH/'
 
 files = []
 # r=root, d=directories, f = files
-for r, d, f in os.walk(path):
-    for file in f:
-        if '.json' in file:
-            filename = os.path.join(r, file)
-            # print('filename')
-            with open('/home/neeha/UT/Sem3/NLP/FP/NLP-Code-Switching/emoji_data/positive_emoji_spanglish.json','r') as json_file:
-            	data = json.load(json_file)
-            	for line in data:
-            		translator = Translator()
-            		# print("line['text']", line['text'])
-            		line = cleanText(line['text'])
-            		if any((word in words.words() and len(word)>1 and len(line.split()) > 5) for word in line.split()):
-            			print(line)
-            			str1='ho'
-            			translator = translator.translate('a')
-            			if translator.text not in translated:
-	            			print("Line:",translator.text)
-	            			output_file.write('1\t')
-	            			output_file.write(translator.text)
-	            			output_file.write("\n")
-	            			translated.append(translator.text)
-            		# else:
-            		# 	print('Tweet contains no english words')
+for r,d,f in os.walk(path):
+	for file in f:
+		if '.json' in file:
+			filename = os.path.join(r,file)
+			if('positive_emoji' in filename):
+				label=1
+			else:
+				label=0
+			with open(filename,'r') as json_file:
+				data = json.load(json_file)
+				for line in data:
+					translator = Translator(service_urls=translate_urls)
+					line = cleanText(line['text'])
+					if (any((word in words.words() and len(word)>1 and len(line.split()) > 5) for word in line.split())):
+						spanish_tweets.write(str(label))
+						spanish_tweets.write('\t')
+						spanish_tweets.write(line)
+						spanish_tweets.write('\n')
+						translator = translator.translate(line)
+						if(translator.text not in translated):
+							print(translator.text)
+							output_file.write(str(label))
+							output_file.write('\t')
+							output_file.write(translator.text)
+							output_file.write("\n")
+							translated.append(translator.text)
+						else:
+							print('Tweet contains no english words')
 output_file.close()
 
 #with open('output.csv','wb') as result_file:
